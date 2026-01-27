@@ -1,17 +1,6 @@
-import express, { Request, Response } from 'express';
+import app from './app';
 
-import mcpServerRouter from './routes/mcpServerRouter';
-import mcpClientRouter from './routes/mcpClientRouter';
-
-const router = express.Router();
-
-router.get('/', (req: Request, res: Response) => {
-  res.json({
-    message: 'MCP api v1',
-  });
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Listening: http://localhost:${port}`);
 });
-
-router.use('/mcp', mcpServerRouter);
-router.use('/client/', mcpClientRouter);
-
-export default router;
