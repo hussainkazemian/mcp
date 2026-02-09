@@ -8,7 +8,6 @@ export type ICalInput = {
   location?: string;
   uid?: string;
   domain?: string;
-  timezone?: string;
 };
 
 /**
@@ -20,16 +19,11 @@ const escapeText = (str: string): string =>
   str.replace(/[\\,;]/g, (match) => `\\${match}`).replace(/\n/g, '\\n');
 
 /**
- * Format a Date as iCal timestamp.
- * If timezone is provided, outputs as TZID=timezone:YYYYMMDDTHHMMSS
- * Otherwise, outputs UTC: YYYYMMDDTHHMMSSZ
+ * Format a Date as iCal local timestamp (TZID=timezone:YYYYMMDDTHHMMSS).
  */
-const toCalDav = (date: Date, timezone?: string): string => {
-  if (timezone) {
-    return DateTime.fromJSDate(date).setZone(timezone).toFormat("yyyyMMdd'T'HHmmss");
-  } else {
-    return DateTime.fromJSDate(date).toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'");
-  }
+const toCalDav = (date: Date): string => {
+  // Always output UTC time
+  return DateTime.fromJSDate(date).toUTC().toFormat("yyyyMMdd'T'HHmmss");
 };
 
 /**
@@ -49,48 +43,23 @@ const generateICal = (input: ICalInput): string => {
     location,
     uid,
     domain = 'example-domain.com',
-    timezone = 'Europe/Helsinki',
   } = input;
 
   const finalUid = uid || `${crypto.randomUUID()}@${domain}`;
-  const now = toCalDav(new Date()); // DTSTAMP in UTC
+  const now = toCalDav(new Date());
 
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Standardized ICal Lib//EN',
     'CALSCALE:GREGORIAN',
-  ];
-
-  // Add VTIMEZONE if timezone is specified
-  if (timezone) {
-    lines.push(
-      'BEGIN:VTIMEZONE',
-      `TZID:${timezone}`,
-      'BEGIN:STANDARD',
-      'DTSTART:20231029T030000',
-      'TZOFFSETFROM:+0300',
-      'TZOFFSETTO:+0200',
-      'TZNAME:EET',
-      'END:STANDARD',
-      'BEGIN:DAYLIGHT',
-      'DTSTART:20240331T030000',
-      'TZOFFSETFROM:+0200',
-      'TZOFFSETTO:+0300',
-      'TZNAME:EEST',
-      'END:DAYLIGHT',
-      'END:VTIMEZONE'
-    );
-  }
-
-  lines.push(
     'BEGIN:VEVENT',
     `UID:${finalUid}`,
     `DTSTAMP:${now}`,
-    `DTSTART${timezone ? `;TZID=${timezone}` : ''}:${toCalDav(start, timezone)}`,
-    `DTEND${timezone ? `;TZID=${timezone}` : ''}:${toCalDav(end, timezone)}`,
+    `DTSTART:${toCalDav(start)}`,
+    `DTEND:${toCalDav(end)}`,
     `SUMMARY:${escapeText(title)}`,
-  );
+  ];
 
   if (description) {
     lines.push(`DESCRIPTION:${escapeText(description)}`);
@@ -106,4 +75,16 @@ const generateICal = (input: ICalInput): string => {
   return lines.join('\r\n');
 };
 
-export { generateICal };
+function toUtc(date: string, time: string, timezone: string): Date {
+  const dt = DateTime.fromISO(`${date}T${time}`, {
+    zone: timezone,
+  });
+
+  if (!dt.isValid) {
+    throw new Error('Invalid date/time/timezone');
+  }
+
+  return dt.toUTC().toJSDate();
+}
+
+export { generateICal, toUtc };
