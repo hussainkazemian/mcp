@@ -95,7 +95,10 @@ Interpret relative dates and times:
 - "next Wednesday" → calculate the next Wednesday from today
 - "tomorrow" → tomorrow's date
 - "at 17" or "5 PM" → 17:00 time
-- "in Helsinki" → location "Helsinki"
+- "in Helsinki" → location "Helsinki" and timezone "Europe/Helsinki"
+
+For events in Helsinki, always set timezone to "Europe/Helsinki".
+Start and end times should be in UTC ISO format.
 
 Do not perform calculations yourself; let the tools handle date/time logic. After using tools, provide a final answer based only on the tool results, without assuming success.`,
       },

@@ -23,6 +23,7 @@ const createEventInputSchema = z.object({
   title: z.string().describe('Short title of the event'),
   description: z.string().optional().describe('Optional detailed description'),
   location: z.string().optional().describe('Optional location of the event'),
+  timezone: z.string().optional().describe('Timezone for the event (e.g., Europe/Helsinki). Defaults to Europe/Helsinki'),
 });
 
 // input types
@@ -42,7 +43,7 @@ mcpServer.registerTool(
     inputSchema: createEventInputSchema,
   },
   async (input: CreateEventInput) => {
-    const { start, end, title, description, location } = input;
+    const { start, end, title, description, location, timezone } = input;
     const eventEnd = end
       ? new Date(end)
       : new Date(new Date(start).getTime() + 60 * 60 * 1000);
@@ -53,6 +54,7 @@ mcpServer.registerTool(
         title,
         description,
         location,
+        timezone,
       });
       const newEvent = await getEventByUrl(eventUrl);
       const newEventObject = icsToJson(newEvent.data);
